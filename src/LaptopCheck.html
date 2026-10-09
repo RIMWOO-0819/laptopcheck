@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LaptopCheck</title>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--panel2:#1d212b;--line:#272c38;--text:#e8eaf0;--mute:#8d95a8;--ok:#2fbf71;--warn:#f0b429;--fail:#ef4e4e;--info:#5b8def;--na:#6b7280;--acc:#8aa4ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo","Segoe UI",system-ui,sans-serif;font-size:15px;line-height:1.5}
+header{position:sticky;top:0;z-index:5;background:#0f1115f2;border-bottom:1px solid var(--line);padding:10px 24px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+h1{font-size:17px;margin:0;font-weight:800;letter-spacing:-.2px}
+h1 small{color:var(--mute);font-weight:400;margin-left:8px;font-size:13px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;align-items:center}
+.chip{padding:3px 10px;border-radius:999px;font-size:13px;background:var(--panel);border:1px solid var(--line)}
+.chip b.ok{color:var(--ok)}.chip b.warn{color:var(--warn)}.chip b.fail{color:var(--fail)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:4px 10px;font-size:13px;color:var(--mute)}
+.seg button.on{background:var(--acc);color:#0b0d12;font-weight:700}
+.wrap{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 54px)}
+nav{border-right:1px solid var(--line);padding:14px 10px;display:flex;flex-direction:column;gap:2px}
+nav button{all:unset;cursor:pointer;padding:9px 12px;border-radius:8px;color:var(--mute);display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
+nav button:hover{color:var(--text)}
+nav button.active{background:var(--panel);color:var(--text)}
+nav .dot{width:8px;height:8px;border-radius:50%;background:#3a4050;flex:none}
+nav .dot.ok{background:var(--ok)}nav .dot.warn{background:var(--warn)}nav .dot.fail{background:var(--fail)}
+main{padding:24px 32px 60px;max-width:1080px;width:100%}
+section{display:none}section.active{display:block}
+h2{font-size:21px;margin:0 0 4px}
+.desc{color:var(--mute);margin:0 0 18px;font-size:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.card h3{font-size:15px;margin:0 0 10px}
+.notice{border-color:#f0b42955;background:#f0b4290d}
+table{width:100%;border-collapse:collapse}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px}
+tr:last-child td{border-bottom:0}
+td.s{width:66px}
+td.n{color:var(--mute);width:180px}
+td small{display:block;color:var(--mute);font-size:12.5px}
+.st{display:inline-block;min-width:46px;text-align:center;padding:1px 8px;border-radius:6px;font-size:12px;font-weight:700}
+.st.ok{background:#2fbf7122;color:var(--ok)}.st.warn{background:#f0b42922;color:var(--warn)}.st.fail{background:#ef4e4e22;color:var(--fail)}.st.info{background:#5b8def22;color:var(--info)}.st.none{background:#ffffff0d;color:var(--mute)}.st.na{background:#ffffff0d;color:var(--na)}
+.btn{cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 14px;border-radius:8px;font:inherit;font-size:14px}
+.btn:hover{border-color:var(--acc)}
+.btn.primary{background:var(--acc);color:#0b0d12;border-color:var(--acc);font-weight:700}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--mute)}
+.form input[type=text],.form input[type=number]{background:#0b0d12;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;font:inherit;font-size:14px}
+.form .chk{flex-direction:row;align-items:center;gap:8px;font-size:14px;color:var(--text)}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .lab{flex:1}
+.item .lab small{display:block;color:var(--mute);font-size:12.5px}
+.pf{display:flex;gap:6px;flex:none}
+.pf button{cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--mute);padding:5px 11px;border-radius:7px;font:inherit;font-size:13px}
+.pf button.on-ok{background:var(--ok);color:#06140c;border-color:var(--ok);font-weight:700}
+.pf button.on-fail{background:var(--fail);color:#fff;border-color:var(--fail);font-weight:700}
+.pf button.on-na{background:#3a4050;color:var(--text);border-color:#3a4050}
+.kb{display:flex;flex-direction:column;gap:5px;user-select:none;padding:14px;background:#0b0d12;border-radius:12px}
+.kr{display:flex;gap:5px}
+.k{min-width:0;height:40px;border:1px solid #2c3240;border-radius:6px;background:#1a1e27;display:flex;align-items:center;justify-content:center;font-size:12.5px;color:#aab2c4;overflow:hidden;white-space:nowrap}
+.k.hit{background:var(--ok);color:#06140c;border-color:var(--ok);font-weight:700}
+.k.na{opacity:.35;border-style:dashed}
+.k.flash{outline:2px solid #fff}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(7,1fr);height:360px;border:1px solid var(--line);border-radius:12px;overflow:hidden;touch-action:none;user-select:none;background:#0b0d12}
+.cell{border:1px solid #ffffff08}
+.cell.t{background:#5b8defaa}
+.pad{height:170px;border:1px dashed #3a4050;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--mute);user-select:none;text-align:center;padding:10px}
+.ticks{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.tick{padding:4px 10px;border-radius:999px;font-size:13px;border:1px solid var(--line);color:var(--mute)}
+.tick.done{border-color:var(--ok);color:var(--ok)}
+.meter{height:14px;background:#0b0d12;border-radius:7px;overflow:hidden;margin:10px 0}
+.meter>i{display:block;height:100%;width:0;background:var(--ok);transition:width .08s}
+video{width:100%;max-width:560px;border-radius:12px;background:#000;display:block;margin-top:10px;transform:scaleX(-1)}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv div{background:var(--panel2);border-radius:10px;padding:10px 12px}
+.kv div span{display:block;color:var(--mute);font-size:12.5px}
+.kv div b{font-size:20px}
+.log{font-family:Consolas,monospace;font-size:13px;color:var(--mute);margin-top:8px;max-height:120px;overflow:auto}
+.bars{display:flex;align-items:flex-end;gap:3px;height:140px;margin-top:12px;background:#0b0d12;border-radius:10px;padding:8px}
+.bar{flex:1;background:var(--acc);border-radius:3px 3px 0 0;min-height:2px}
+.verdict{padding:18px 20px;border-radius:12px;font-size:17px;font-weight:700;margin-bottom:14px}
+.verdict.ok{background:#2fbf711c;color:var(--ok);border:1px solid #2fbf7155}
+.verdict.warn{background:#f0b4291c;color:var(--warn);border:1px solid #f0b42955}
+.verdict.fail{background:#ef4e4e1c;color:var(--fail);border:1px solid #ef4e4e55}
+.verdict small{display:block;font-weight:400;font-size:14px;color:var(--text);opacity:.85;margin-top:4px}
+#fs{position:fixed;inset:0;z-index:100;display:none;cursor:none}
+#fsCap{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);padding:8px 14px;border-radius:8px;background:#000c;color:#fff;font-size:14px;transition:opacity .5s;white-space:nowrap}
+.mute{color:var(--mute)}
+footer{color:var(--mute);font-size:12.5px;margin-top:30px}
+footer a{color:var(--acc)}
+@media (max-width:800px){.wrap{grid-template-columns:1fr}nav{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line)}main{padding:18px 16px 50px}}
+@media print{header .chips,nav,.noprint,footer{display:none!important}.wrap{display:block}section{display:none!important}#sec-summary{display:block!important}body{background:#fff;color:#000}.card{border-color:#ccc;background:#fff}}
+</style>
+</head>
+<body>
+<header>
+  <h1><span data-i18n="app_title"></span><small id="genInfo"></small></h1>
+  <div class="chips">
+    <span id="chips" class="row"></span>
+    <span class="seg" id="modeSeg"><button data-mode="quick" data-i18n="mode_quick"></button><button data-mode="full" data-i18n="mode_full"></button></span>
+    <span class="seg" id="langSeg"><button data-lang="ko">한국어</button><button data-lang="en">EN</button></span>
+  </div>
+</header>
+<div class="wrap">
+  <nav id="nav"></nav>
+  <main>
+    <section id="sec-auto">
+      <h2 data-i18n="s_auto_t"></h2>
+      <p class="desc" data-i18n="s_auto_d"></p>
+      <div class="card">
+        <h3 data-i18n="spec_title"></h3>
+        <p class="desc" style="margin-bottom:12px" data-i18n="spec_desc"></p>
+        <div class="form" id="specForm">
+          <label><span data-i18n="spec_model"></span><input type="text" data-spec="model" data-i18n-ph="ph_model"></label>
+          <label><span data-i18n="spec_cpu"></span><input type="text" data-spec="cpu" data-i18n-ph="ph_cpu"></label>
+          <label><span data-i18n="spec_ram"></span><input type="number" min="0" data-spec="ram" placeholder="16"></label>
+          <label><span data-i18n="spec_storage"></span><input type="number" min="0" data-spec="storage" placeholder="512"></label>
+          <label><span data-i18n="spec_batt"></span><input type="number" min="0" max="100" data-spec="batt" placeholder="88"></label>
+          <label class="chk"><input type="checkbox" data-spec="touch"><span data-i18n="spec_touch"></span></label>
+        </div>
+      </div>
+      <div id="autoBox"></div>
+    </section>
+
+    <section id="sec-screen">
+      <h2 data-i18n="s_screen_t"></h2>
+      <p class="desc" data-i18n="s_screen_d"></p>
+      <div class="card"><div class="row"><button class="btn primary" id="fsBtn" data-i18n="btn_fs"></button><span class="mute" data-i18n="fs_hint"></span></div></div>
+      <div class="card"><div id="items-screen"></div></div>
+    </section>
+
+    <section id="sec-keyboard">
+      <h2 data-i18n="s_kb_t"></h2>
+      <p class="desc" data-i18n="s_kb_d"></p>
+      <div class="kb" id="kb"></div>
+      <div class="row" style="margin-top:10px"><span id="kbCount" class="mute"></span><span id="kbLast" class="mute"></span><button class="btn" id="kbReset" style="margin-left:auto" data-i18n="btn_reset"></button></div>
+      <p id="kbExtra" class="mute" style="font-size:13px"></p>
+      <div class="card" style="margin-top:6px"><div id="items-keyboard"></div></div>
+    </section>
+
+    <section id="sec-touch">
+      <h2 data-i18n="s_touch_t"></h2>
+      <p class="desc" data-i18n="touch_d1"></p>
+      <div class="grid" id="grid"></div>
+      <div class="row" style="margin-top:8px"><span id="touchInfo" class="mute"></span><button class="btn" id="gridReset" style="margin-left:auto" data-i18n="btn_reset"></button></div>
+      <p class="desc" style="margin-top:18px" data-i18n="touch_d2"></p>
+      <div class="pad" id="pad" data-i18n="pad_box"></div>
+      <div class="ticks" id="padTicks"></div>
+      <div class="card" style="margin-top:14px"><div id="items-touch"></div></div>
+    </section>
+
+    <section id="sec-audio">
+      <h2 data-i18n="s_audio_t"></h2>
+      <p class="desc" data-i18n="s_audio_d"></p>
+      <div class="card"><div class="row">
+        <button class="btn" data-tone="-1" data-i18n="btn_left"></button>
+        <button class="btn" data-tone="1" data-i18n="btn_right"></button>
+        <button class="btn" data-tone="0" data-i18n="btn_both"></button>
+        <button class="btn" id="sweepBtn" data-i18n="btn_sweep"></button>
+      </div></div>
+      <div class="card">
+        <h3 data-i18n="mic_title"></h3>
+        <div class="row"><button class="btn" id="micBtn" data-i18n="btn_mic_start"></button><span id="micInfo" class="mute" data-i18n="mic_hint"></span></div>
+        <div class="meter"><i id="micBar"></i></div>
+      </div>
+      <div class="card"><div id="items-audio"></div></div>
+    </section>
+
+    <section id="sec-camera">
+      <h2 data-i18n="s_cam_t"></h2>
+      <p class="desc" data-i18n="s_cam_d"></p>
+      <div class="card">
+        <div class="row"><button class="btn" id="camBtn" data-i18n="btn_cam_on"></button><span id="camInfo" class="mute"></span></div>
+        <video id="cam" autoplay playsinline muted></video>
+      </div>
+      <div class="card"><div id="items-camera"></div></div>
+    </section>
+
+    <section id="sec-ports">
+      <h2 data-i18n="s_ports_t"></h2>
+      <p class="desc" data-i18n="s_ports_d"></p>
+      <div class="card"><div class="kv" id="batKv"></div><div class="log" id="batLog"></div></div>
+      <div class="card"><div id="items-ports"></div></div>
+    </section>
+
+    <section id="sec-cpu">
+      <h2 data-i18n="s_cpu_t"></h2>
+      <p class="desc" data-i18n="s_cpu_d"></p>
+      <div class="card">
+        <div class="row"><button class="btn primary" id="cpuBtn" data-i18n="btn_cpu"></button><span id="cpuInfo" class="mute"></span></div>
+        <div class="bars" id="bars"></div>
+        <p id="cpuResult" style="margin:10px 0 0"></p>
+      </div>
+      <div class="card"><div id="items-cpu"></div></div>
+    </section>
+
+    <section id="sec-ext">
+      <h2 data-i18n="s_ext_t"></h2>
+      <p class="desc" data-i18n="s_ext_d"></p>
+      <div class="card"><div id="items-ext"></div></div>
+    </section>
+
+    <section id="sec-summary">
+      <h2 data-i18n="s_sum_t"></h2>
+      <p class="desc noprint" data-i18n="s_sum_d"></p>
+      <div id="verdict"></div>
+      <div class="row noprint" style="margin-bottom:14px">
+        <button class="btn" id="copyBtn" data-i18n="btn_copy"></button>
+        <button class="btn" id="jsonBtn" data-i18n="btn_json"></button>
+        <button class="btn" onclick="window.print()" data-i18n="btn_print"></button>
+        <span id="copyInfo" class="mute"></span>
+      </div>
+      <div id="sumBox"></div>
+    </section>
+
+    <footer data-i18n="footer"></footer>
+  </main>
+</div>
+<div id="fs"><div id="fsCap"></div></div>
+
+<script src="data.js" charset="utf-8"></script>
+<script>
+/* =====================================================================
+   LaptopCheck — results viewer + manual hardware tests
+   data.js (written by check.ps1) sets window.AUTO. Without it, the page
+   still works for the manual tests (e.g. on macOS).
+   All judging thresholds live in RULES below.
+   ===================================================================== */
+const RULES = {
+  batteryHealth: {ok: 80, warn: 70},          // % of design capacity
+  batteryCycles: {ok: 500},                   // above → "check"
+  batteryClaimTolerance: 5,                   // % points below the seller's claim → "check"
+  ssdWear: {ok: 10, warn: 30},                // % used
+  ssdTempMax: 70,                             // °C
+  kernelPower: {ok: 2, warn: 9},              // unexpected shutdowns in 90 days
+  bugcheck: {ok: 0, warn: 2},                 // blue screens in 90 days
+  ramTolerance: 1,                            // GB
+  storageTolerance: 0.9,                      // fraction of the listed size
+  recentInstallDays: 14,
+  shortLogDays: 30,
+  cpuRetain: {ok: 55, warn: 40},              // % of early performance kept at the end
+  cpuSeconds: {quick: 30, full: 60}
+};
+
+const T = {
+ko: {
+  app_title:'중고 노트북 점검', mode_quick:'빠른 점검 · 5분', mode_full:'전체 점검 · 12분',
+  nav_auto:'자동 점검', nav_screen:'화면', nav_keyboard:'키보드', nav_touch:'터치', nav_audio:'스피커·마이크', nav_camera:'웹캠', nav_ports:'충전·포트', nav_cpu:'발열·성능', nav_ext:'외관·계정', nav_summary:'최종 결과',
+  chip_auto:'자동', chip_manual:'수동 {d}/{t}', chip_fail:'문제 {n}',
+  st_ok:'정상', st_warn:'확인', st_fail:'문제', st_info:'참고', st_none:'미확인', st_na:'해당없음',
+  pf_ok:'정상', pf_fail:'문제', pf_na:'해당없음',
+  btn_reset:'초기화',
+  s_auto_t:'자동 점검 결과', s_auto_d:'이 노트북의 정보를 읽기만 해서 확인한 결과입니다. <b>확인·문제</b> 항목은 판매자에게 물어보세요.',
+  spec_title:'판매글 사양 입력 (선택)', spec_desc:'입력하면 실제 사양과 자동으로 비교합니다. 비워 두면 비교하지 않습니다.',
+  spec_model:'모델명', spec_cpu:'CPU', spec_ram:'RAM (GB)', spec_storage:'저장장치 (GB)', spec_batt:'판매자가 말한 배터리 (%)', spec_touch:'판매글에 터치스크린이 있음',
+  ph_model:'예: UX3405, 14Z90S', ph_cpu:'예: 225H, i5-1340P',
+  no_auto_win:'<b>자동 점검 데이터가 없습니다.</b><br>폴더 안의 <b>START.bat</b>를 더블클릭해야 자동 점검이 됩니다. 왼쪽의 수동 테스트는 지금도 쓸 수 있습니다.',
+  no_auto_mac:'<b>macOS에서는 수동 테스트만 사용할 수 있습니다.</b><br>배터리 상태: 시스템 설정 → 배터리 → 배터리 상태 · 충전 사이클: 시스템 정보 → 전원 · 저장장치/모델: Apple 메뉴 → 이 Mac에 관하여',
+  no_auto_other:'<b>자동 점검 데이터가 없습니다.</b> 이 기기에서는 수동 테스트만 사용할 수 있습니다.',
+  not_admin:'관리자 권한 없이 실행되어 SSD 상세 수명·드라이브 암호화 항목이 빠졌습니다. 필요하면 START.bat를 다시 실행하고 UAC 창에서 "예"를 누르세요.',
+  c_system:'시스템', c_cpu:'CPU·메모리', c_storage:'저장장치', c_battery:'배터리', c_display:'디스플레이', c_devices:'장치', c_network:'무선', c_stability:'안정성 (최근 90일)', c_windows:'Windows',
+  a_model:'모델', a_serial:'시리얼 번호', a_bios:'BIOS', a_os:'운영체제', a_cpu:'CPU', a_ram:'RAM', a_disk:'저장장치', a_health:'저장장치 상태', a_wear:'SSD 마모도', a_poh:'누적 사용 시간', a_temp:'SSD 온도', a_rerr:'복구 불가 읽기 오류', a_cfree:'C: 여유 공간',
+  a_batt:'배터리', a_batt_health:'배터리 건강도', a_cycles:'충전 사이클', a_charge:'현재 충전량',
+  a_gpu:'그래픽', a_res:'현재 해상도', a_panel:'화면 크기',
+  a_err_dev:'오류 장치', a_touch:'터치스크린', a_tpad:'정밀 터치패드', a_cam:'웹캠', a_audio:'오디오 장치', a_bt:'블루투스', a_wifi:'Wi-Fi',
+  a_kp:'비정상 종료', a_bsod:'블루스크린', a_whea:'하드웨어 오류 보고', a_logstart:'기록 시작일',
+  a_act:'정품 인증', a_bitlocker:'드라이브 암호화', a_accounts:'로그인 계정',
+  v_none:'없음', v_found:'감지됨', v_notfound:'없음', v_times:'{n}회', v_hours:'{n}시간', v_activated:'인증됨', v_notact:'미인증', v_on:'켜짐', v_off:'꺼짐', v_ms:'Microsoft 계정 {n}개', v_local:'로컬 계정만', v_charging:'충전기 연결됨', v_discharging:'배터리 사용 중', v_desktop:'배터리 없음 (데스크톱)', v_nobatt:'배터리를 인식하지 못함', v_unknown:'읽지 못함',
+  n_spec_match:'판매글 "{v}"과 일치', n_spec_miss:'판매글 "{v}"과 다름 — 판매자에게 확인', n_model_tip:'판매글 모델명과 같은지 확인',
+  n_serial:'박스 스티커·본체 바닥의 시리얼과 같은지 비교', n_installed:'Windows 설치 후 {d}일', n_recent_install:'최근 재설치됨 — 이전 이력이 지워진 상태',
+  n_ram_spec:'판매글: {v} GB', n_ram_slots:'메모리 모듈 {n}개',
+  n_disk_spec:'판매글: {v} GB', n_health:'Healthy가 아니면 고장 위험', n_wear:'0%가 새것', n_poh:'판매자가 말한 사용 기간과 상식적으로 맞는지 참고', n_rerr:'0이어야 정상',
+  n_batt_health:'{ok}% 이상 양호 · {warn}% 미만이면 교체 고려', n_batt_claim:'판매자 주장 {c}%보다 낮음', n_batt_claim_ok:'판매자 주장 {c}%와 비슷함', n_cycles:'{ok}회 이하가 일반적', n_nobatt:'배터리 고장·분리 가능성',
+  n_res:'해상도를 낮춰 뒀다면 패널 최대치와 다를 수 있음',
+  n_err_dev:'오류 코드 {c}', n_err_disabled:'사용 안 함으로 꺼져 있음 (코드 22)', n_touch_spec:'판매글에는 터치스크린이 있음', n_touch_none:'터치 미지원 모델이면 정상', n_audio:'스피커와 마이크가 모두 보여야 함', n_wifi:'실제 연결은 휴대폰 핫스팟으로 확인',
+  n_kp:'강제 종료 포함 · 많으면 꺼짐/멈춤 이력 의심', n_bsod:'', n_whea:'CPU·메모리·PCIe 하드웨어 오류', n_short_log:'기록이 짧음 — 최근 초기화로 이력이 지워졌을 수 있음',
+  n_act:'노트북 기본(OEM) 라이선스는 초기화해도 유지', n_bitlocker:'거래 후 "모든 항목 제거 + 드라이브 정리"로 초기화하면 문제 없음', n_accounts:'판매자 계정 로그아웃 후 거래, 받은 뒤 초기화 권장',
+  s_screen_t:'화면 — 불량 화소 · 번인', s_screen_d:'밝기를 최대로 올리고 시작하세요. OLED는 작업표시줄·아이콘 자국(번인)이, LCD는 빛샘·멍이 잘 생깁니다.',
+  btn_fs:'전체화면 색상 테스트 시작', fs_hint:'클릭 · 스페이스 · → 다음 / ← 이전 / Esc 종료', fs_cap:'{i}/{n} · {label}  (클릭: 다음 · Esc: 종료)',
+  sc_black:'검정 — 밝게 빛나는 점(불량 화소)', sc_white:'흰색 — 검은 점, 얼룩, 누런 띠', sc_red:'빨강 — 다른 색 점', sc_green:'초록 — 다른 색 점', sc_blue:'파랑 — 다른 색 점', sc_gray:'회색 50% — 작업표시줄 자국·아이콘 잔상(번인)', sc_dark:'어두운 회색 — 멍·얼룩·빛샘', sc_grad:'그라데이션 — 줄무늬·계단 현상',
+  s_kb_t:'키보드', s_kb_d:'모든 키를 한 번씩 누르세요. 손바닥으로 줄마다 쓸어 눌러도 됩니다. F키가 음량·밝기로 동작하면 <b>Fn</b>(또는 Fn Lock)과 함께 누르세요. Win키를 누르면 시작 메뉴가 열리니 Esc로 닫으면 됩니다. 자판 배열이 달라 회색으로 남는 키는 직접 판단하세요.',
+  kb_count:'{n} / {t} 키 확인', kb_last:' · 마지막 입력: {k}', kb_extra:'추가로 감지된 키: {list}', kb_fn:'Fn 키는 브라우저에서 감지되지 않습니다',
+  s_touch_t:'터치스크린 · 터치패드', touch_d1:'① 터치스크린이 있다면 손가락으로 아래 칸을 모두 칠하세요. 다섯 손가락을 동시에 대 보면 멀티터치도 확인됩니다. 터치 미지원 모델은 건너뛰세요.',
+  touch_d2:'② 아래 상자 안에서 터치패드로 커서 이동, 왼쪽 클릭, 오른쪽 클릭(두 손가락 탭), 두 손가락 위아래·좌우 스크롤을 해 보세요. 표면 전체를 문질러 커서가 끊기는 곳이 없는지도 보세요.',
+  pad_box:'이 상자 안에서 터치패드 조작', touch_info:'터치 영역 {p}% · 동시 터치 최대 {n}개',
+  pad_move:'커서 이동', pad_left:'왼쪽 클릭', pad_right:'오른쪽 클릭', pad_vs:'세로 스크롤', pad_hs:'가로 스크롤',
+  s_audio_t:'스피커 · 마이크', s_audio_d:'음량을 70% 이상 올리세요. 왼쪽·오른쪽 소리가 맞는 쪽에서 나는지, 스윕에서 지지직거리는 소리(스피커 찢어짐)가 없는지 확인합니다.',
+  btn_left:'◀ 왼쪽', btn_right:'오른쪽 ▶', btn_both:'양쪽', btn_sweep:'저음→고음 스윕 (6초)',
+  mic_title:'마이크', btn_mic_start:'마이크 테스트 시작', btn_mic_stop:'마이크 끄기', mic_hint:'권한 요청이 뜨면 허용을 누르세요', mic_speak:'말해 보세요…', mic_ok:'소리 감지됨 ✓', mic_err:'마이크를 열 수 없음: {e}',
+  s_cam_t:'웹캠', s_cam_d:'화면이 나오는지, 렌즈에 얼룩·줄·깨짐이 없는지 확인하세요.', btn_cam_on:'웹캠 켜기', btn_cam_off:'웹캠 끄기', cam_err:'웹캠을 열 수 없음: {e}',
+  s_ports_t:'충전 · 포트 · 무선', s_ports_d:'충전기를 충전 가능한 포트(USB-C·전용 단자)마다 하나씩 꽂아 보세요. 아래 상태가 실시간으로 "충전 중"으로 바뀌면 그 포트는 정상입니다.',
+  bat_state:'현재 상태', bat_level:'충전량', bat_health:'배터리 건강도', bat_cycles:'충전 사이클', charging:'⚡ 충전 중', discharging:'배터리 사용 중', bat_log_on:'충전기 연결 감지 ⚡', bat_log_off:'충전기 분리', bat_unsupported:'이 브라우저는 실시간 충전 상태를 지원하지 않습니다. Edge나 Chrome으로 열어 주세요.',
+  s_cpu_t:'발열 · 성능', s_cpu_d:'충전기를 꽂은 상태에서 실행하세요. CPU 전체 코어를 최대로 돌리는 동안 팬이 돌기 시작하는지, 덜그럭거리는 소음은 없는지, 키보드 윗부분이 손을 못 댈 만큼 뜨겁지 않은지 확인하세요. 부하 테스트 중에도 다른 탭에서 테스트를 계속할 수 있습니다.',
+  btn_cpu:'부하 테스트 시작 ({s}초)', btn_cpu_again:'다시 테스트', cpu_running:'{n}개 스레드 동작 중 · {s} / {d}초', cpu_result:'처음 대비 마지막 성능 유지율 <b>{r}%</b>',
+  cpu_ok:'정상 범위입니다. 얇은 노트북은 부스트 직후 성능이 어느 정도 내려가는 것이 정상입니다.', cpu_warn:'성능 하락이 큰 편입니다. 충전기 연결과 전원 모드("최고 성능")를 확인하고 다시 해 보세요.', cpu_fail:'성능이 크게 떨어집니다. 쿨링(팬·서멀) 이상 가능성이 있으니 판매자에게 확인하세요.', cpu_line:'CPU 성능 유지율 {r}',
+  s_ext_t:'외관 · 구성품 · 계정', s_ext_d:'눈으로 확인하는 항목입니다.',
+  s_sum_t:'최종 결과', s_sum_d:'모든 탭을 확인한 뒤 이 화면에서 결과를 보세요.',
+  btn_copy:'결과 텍스트 복사', btn_json:'리포트 저장 (JSON)', btn_print:'PDF 저장 / 인쇄', copied:'복사됨 — 메신저 "나에게 보내기"에 붙여넣어 두세요', copy_fail:'복사 실패: 브라우저 권한을 확인하세요',
+  verdict_fail:'문제 항목 {n}개', verdict_fail_sub:'거래 전에 판매자와 확인하고, 해결되지 않으면 가격 조정이나 거래 취소를 고려하세요.',
+  verdict_warn:'확인이 더 필요합니다', verdict_ok:'이상 없음 — 거래를 진행해도 좋습니다', verdict_ok_sub:'받은 뒤 설정 → 시스템 → 복구 → "PC 초기화 → 모든 항목 제거"로 초기화하고 쓰세요.',
+  miss_auto:'자동 점검 미실행', miss_manual:'수동 테스트 {n}개 미완료', miss_cpu:'발열 테스트 미실행', n_warns:'확인 항목 {n}개',
+  sum_key:'핵심 항목', sum_flag:'확인·문제 항목', sum_manual:'수동 테스트', report_title:'[중고 노트북 점검 결과]',
+  footer:'LaptopCheck · 읽기 전용 · 네트워크로 아무것도 보내지 않습니다. 판정 기준은 참고용이며 최종 판단은 직접 하세요.',
+  m_scr_dead:'불량 화소 없음', h_scr_dead:'단색 화면에서 밝은 점, 검은 점, 세로·가로 줄 없음',
+  m_scr_burn:'번인·얼룩·빛샘 없음', h_scr_burn:'회색 화면에서 작업표시줄 자국, 아이콘 잔상, 멍 없음',
+  m_scr_bright:'밝기 조절·깜빡임 정상', h_scr_bright:'밝기 키로 최소~최대 조절, 낮은 밝기에서 이상한 깜빡임 없음',
+  m_kb_all:'모든 키 입력 정상', h_kb_all:'자판이 전부 초록색이 되면 자동 체크',
+  m_kb_light:'키보드 백라이트', h_kb_light:'백라이트 키로 켜짐·단계 변경 (없는 모델은 해당없음)',
+  m_touch_scr:'터치스크린 전체 영역 반응', h_touch_scr:'칸을 모두 칠하면 자동 체크 (터치 미지원이면 해당없음)',
+  m_touch_pad:'터치패드 이동·클릭·스크롤', h_touch_pad:'5개 동작을 모두 하면 자동 체크',
+  m_spk_lr:'왼쪽·오른쪽 스피커', h_spk_lr:'각각 맞는 쪽에서 소리가 남',
+  m_spk_clean:'스윕 중 찢어지는 소리 없음', h_spk_clean:'',
+  m_mic:'마이크 입력', h_mic:'말하면 막대가 움직이면 자동 체크',
+  m_jack:'이어폰 잭', h_jack:'유선 이어폰이 있을 때만',
+  m_cam:'웹캠 화면 정상', h_cam:'',
+  m_port_charge:'충전 포트 전부 충전됨', h_port_charge:'포트를 바꿔 꽂을 때마다 "충전 중"으로 바뀜',
+  m_port_usb:'USB 포트 인식', h_port_usb:'이 USB를 꽂아 실행 중이면 그 포트는 정상 · 다른 포트에도 꽂아 보기',
+  m_port_video:'영상 출력 (HDMI 등)', h_port_video:'모니터가 있을 때만',
+  m_wifi:'Wi-Fi 연결', h_wifi:'휴대폰 핫스팟에 연결해 웹페이지가 열리는지',
+  m_bt:'블루투스', h_bt:'설정 → 블루투스에서 휴대폰이 검색되는지',
+  m_cpu_ok:'부하 중 꺼짐·멈춤 없음, 팬 정상', h_cpu_ok:'팬 소리가 나고 덜그럭거리는 소음은 없어야 함',
+  m_ext_hinge:'힌지 흔들림·소음 없음', h_ext_hinge:'화면을 여러 각도로 열고 닫아 보기',
+  m_ext_body:'찍힘·휨·나사 풀림 없음', h_ext_body:'상판·하판·모서리·바닥 고무발 확인',
+  m_ext_serial:'박스 시리얼 = 본체 시리얼', h_ext_serial:'자동 점검의 시리얼 번호와 박스 스티커 비교',
+  m_ext_charger:'충전기 정품·정격', h_ext_charger:'제조사 정품, 출력(W)이 본체 요구치 이상',
+  m_ext_account:'판매자 계정 로그아웃 · 초기화 합의', h_ext_account:'BIOS·Windows 비밀번호 없음, 받은 뒤 초기화'
+},
+en: {
+  app_title:'Used Laptop Check', mode_quick:'Quick · 5 min', mode_full:'Full · 12 min',
+  nav_auto:'Auto check', nav_screen:'Screen', nav_keyboard:'Keyboard', nav_touch:'Touch', nav_audio:'Speakers & mic', nav_camera:'Webcam', nav_ports:'Charging & ports', nav_cpu:'Heat & performance', nav_ext:'Body & account', nav_summary:'Result',
+  chip_auto:'Auto', chip_manual:'Manual {d}/{t}', chip_fail:'Problems {n}',
+  st_ok:'OK', st_warn:'Check', st_fail:'Problem', st_info:'Info', st_none:'Not done', st_na:'N/A',
+  pf_ok:'OK', pf_fail:'Problem', pf_na:'N/A',
+  btn_reset:'Reset',
+  s_auto_t:'Automatic check', s_auto_d:'Facts read from this laptop without changing anything. Ask the seller about every <b>Check</b> or <b>Problem</b> item.',
+  spec_title:'Listing specs (optional)', spec_desc:'Fill these in to compare the listing with the real hardware. Leave blank to skip.',
+  spec_model:'Model', spec_cpu:'CPU', spec_ram:'RAM (GB)', spec_storage:'Storage (GB)', spec_batt:'Battery health claimed (%)', spec_touch:'Listing says it has a touchscreen',
+  ph_model:'e.g. UX3405, XPS 13 9340', ph_cpu:'e.g. 225H, i5-1340P',
+  no_auto_win:'<b>No automatic data found.</b><br>Double-click <b>START.bat</b> in this folder to run the automatic check. The manual tests on the left work anyway.',
+  no_auto_mac:'<b>On macOS only the manual tests are available.</b><br>Battery health: System Settings → Battery → Battery Health · Cycle count: System Information → Power · Model/storage: Apple menu → About This Mac',
+  no_auto_other:'<b>No automatic data found.</b> Only the manual tests are available on this device.',
+  not_admin:'Run without admin rights, so SSD health details and drive encryption are missing. Run START.bat again and click "Yes" in the UAC window if you need them.',
+  c_system:'System', c_cpu:'CPU & memory', c_storage:'Storage', c_battery:'Battery', c_display:'Display', c_devices:'Devices', c_network:'Wireless', c_stability:'Stability (last 90 days)', c_windows:'Windows',
+  a_model:'Model', a_serial:'Serial number', a_bios:'BIOS', a_os:'Operating system', a_cpu:'CPU', a_ram:'RAM', a_disk:'Drive', a_health:'Drive health', a_wear:'SSD wear', a_poh:'Power-on hours', a_temp:'SSD temperature', a_rerr:'Uncorrectable read errors', a_cfree:'C: free space',
+  a_batt:'Battery', a_batt_health:'Battery health', a_cycles:'Charge cycles', a_charge:'Current charge',
+  a_gpu:'Graphics', a_res:'Current resolution', a_panel:'Screen size',
+  a_err_dev:'Device errors', a_touch:'Touchscreen', a_tpad:'Precision touchpad', a_cam:'Webcam', a_audio:'Audio devices', a_bt:'Bluetooth', a_wifi:'Wi-Fi',
+  a_kp:'Unexpected shutdowns', a_bsod:'Blue screens', a_whea:'Hardware error reports', a_logstart:'Log starts on',
+  a_act:'Activation', a_bitlocker:'Drive encryption', a_accounts:'Sign-in accounts',
+  v_none:'None', v_found:'Detected', v_notfound:'Not found', v_times:'{n}×', v_hours:'{n} h', v_activated:'Activated', v_notact:'Not activated', v_on:'On', v_off:'Off', v_ms:'{n} Microsoft account(s)', v_local:'Local accounts only', v_charging:'On charger', v_discharging:'On battery', v_desktop:'No battery (desktop)', v_nobatt:'Battery not detected', v_unknown:'Could not read',
+  n_spec_match:'Matches listing "{v}"', n_spec_miss:'Differs from listing "{v}" — ask the seller', n_model_tip:'Compare with the model in the listing',
+  n_serial:'Compare with the box label and the sticker under the laptop', n_installed:'Windows installed {d} days ago', n_recent_install:'Recently reinstalled — earlier history is gone',
+  n_ram_spec:'Listing: {v} GB', n_ram_slots:'{n} memory module(s)',
+  n_disk_spec:'Listing: {v} GB', n_health:'Anything other than Healthy means failure risk', n_wear:'0% = new', n_poh:'Should roughly match how long the seller says it was used', n_rerr:'Should be 0',
+  n_batt_health:'{ok}%+ is good · below {warn}% consider a replacement', n_batt_claim:'Lower than the claimed {c}%', n_batt_claim_ok:'Close to the claimed {c}%', n_cycles:'Up to {ok} is typical', n_nobatt:'Battery may be dead or disconnected',
+  n_res:'May differ from the panel maximum if the resolution was lowered',
+  n_err_dev:'Error code {c}', n_err_disabled:'Disabled by the user (code 22)', n_touch_spec:'The listing says it has a touchscreen', n_touch_none:'Fine if this model has no touchscreen', n_audio:'Both speakers and a microphone should be listed', n_wifi:'Test a real connection with a phone hotspot',
+  n_kp:'Includes forced power-offs · many suggests shutdown/freeze issues', n_bsod:'', n_whea:'CPU / memory / PCIe hardware errors', n_short_log:'Short history — logs may have been wiped by a recent reset',
+  n_act:'Factory (OEM) licenses survive a reset', n_bitlocker:'Fine if you reset with "Remove everything + clean drive"', n_accounts:'Have the seller sign out; reset after buying',
+  s_screen_t:'Screen — dead pixels & burn-in', s_screen_d:'Set brightness to maximum first. OLED panels can show burn-in (taskbar, icons); LCDs can show backlight bleed and clouding.',
+  btn_fs:'Start full-screen color test', fs_hint:'Click · Space · → next / ← back / Esc exit', fs_cap:'{i}/{n} · {label}  (click: next · Esc: exit)',
+  sc_black:'Black — bright stuck pixels', sc_white:'White — dark dots, stains, yellow bands', sc_red:'Red — off-color dots', sc_green:'Green — off-color dots', sc_blue:'Blue — off-color dots', sc_gray:'50% gray — taskbar or icon burn-in', sc_dark:'Dark gray — clouding, stains, bleed', sc_grad:'Gradient — banding',
+  s_kb_t:'Keyboard', s_kb_d:'Press every key once — sweeping each row with your palm is fine. If F-keys change volume/brightness, hold <b>Fn</b> (or toggle Fn Lock). The Windows key opens Start; press Esc to close it. Keys that stay gray because of a different layout are your call.',
+  kb_count:'{n} / {t} keys', kb_last:' · last: {k}', kb_extra:'Other keys detected: {list}', kb_fn:'The Fn key cannot be detected by a browser',
+  s_touch_t:'Touchscreen & touchpad', touch_d1:'① If it has a touchscreen, paint every cell below with your finger. Put five fingers down at once to test multi-touch. Skip this on non-touch models.',
+  touch_d2:'② Inside the box below, use the touchpad to move, left-click, right-click (two-finger tap) and scroll with two fingers both ways. Rub the whole surface to find dead zones.',
+  pad_box:'Use the touchpad inside this box', touch_info:'Touch area {p}% · max {n} simultaneous touches',
+  pad_move:'Move', pad_left:'Left click', pad_right:'Right click', pad_vs:'Vertical scroll', pad_hs:'Horizontal scroll',
+  s_audio_t:'Speakers & microphone', s_audio_d:'Set volume above 70%. Check that left and right play from the correct side and that the sweep has no rattle or buzz (torn speaker).',
+  btn_left:'◀ Left', btn_right:'Right ▶', btn_both:'Both', btn_sweep:'Low→high sweep (6 s)',
+  mic_title:'Microphone', btn_mic_start:'Start mic test', btn_mic_stop:'Stop mic', mic_hint:'Allow access if the browser asks', mic_speak:'Say something…', mic_ok:'Sound detected ✓', mic_err:'Cannot open the microphone: {e}',
+  s_cam_t:'Webcam', s_cam_d:'Check that an image appears with no smudges, lines or cracks.', btn_cam_on:'Turn on webcam', btn_cam_off:'Turn off webcam', cam_err:'Cannot open the webcam: {e}',
+  s_ports_t:'Charging, ports & wireless', s_ports_d:'Plug the charger into every charging-capable port (USB-C or barrel jack). The status below switches to "charging" in real time when the port works.',
+  bat_state:'Status', bat_level:'Charge', bat_health:'Battery health', bat_cycles:'Cycles', charging:'⚡ Charging', discharging:'On battery', bat_log_on:'Charger connected ⚡', bat_log_off:'Charger removed', bat_unsupported:'This browser cannot show live charging status. Open the page in Edge or Chrome.',
+  s_cpu_t:'Heat & performance', s_cpu_d:'Run this with the charger plugged in. While every CPU core is maxed out, listen for the fan spinning up, check for rattling, and feel whether the area above the keyboard gets too hot to touch. You can keep testing in other tabs meanwhile.',
+  btn_cpu:'Start load test ({s} s)', btn_cpu_again:'Run again', cpu_running:'{n} threads busy · {s} / {d} s', cpu_result:'Performance kept at the end: <b>{r}%</b>',
+  cpu_ok:'Normal. Thin laptops usually drop somewhat after the initial boost.', cpu_warn:'Large drop. Check the charger and the power mode ("Best performance"), then run again.', cpu_fail:'Severe drop — the cooling (fan or thermal paste) may be failing. Ask the seller.', cpu_line:'CPU performance kept {r}',
+  s_ext_t:'Body, accessories & account', s_ext_d:'Things to check by eye.',
+  s_sum_t:'Result', s_sum_d:'Go through every tab, then come back here.',
+  btn_copy:'Copy result text', btn_json:'Save report (JSON)', btn_print:'Save PDF / print', copied:'Copied — paste it into a note or a message to yourself', copy_fail:'Copy failed: check browser permissions',
+  verdict_fail:'{n} problem(s) found', verdict_fail_sub:'Talk to the seller before paying. If it cannot be resolved, renegotiate or walk away.',
+  verdict_warn:'More checking needed', verdict_ok:'No issues found — good to go', verdict_ok_sub:'After buying, reset via Settings → System → Recovery → "Reset this PC → Remove everything".',
+  miss_auto:'Automatic check not run', miss_manual:'{n} manual test(s) not done', miss_cpu:'Load test not run', n_warns:'{n} item(s) to check',
+  sum_key:'Key facts', sum_flag:'Check / problem items', sum_manual:'Manual tests', report_title:'[Used laptop check result]',
+  footer:'LaptopCheck · read-only · sends nothing over the network. Thresholds are guidance; the final call is yours.',
+  m_scr_dead:'No dead pixels', h_scr_dead:'No bright/dark dots or lines on solid colors',
+  m_scr_burn:'No burn-in, clouding or bleed', h_scr_burn:'No taskbar or icon ghosts, no blotches on gray',
+  m_scr_bright:'Brightness & no flicker', h_scr_bright:'Full range with the brightness keys, no odd flicker at low brightness',
+  m_kb_all:'All keys work', h_kb_all:'Ticks itself when every key turns green',
+  m_kb_light:'Keyboard backlight', h_kb_light:'Turns on and changes level (N/A if none)',
+  m_touch_scr:'Touchscreen works everywhere', h_touch_scr:'Ticks itself when every cell is painted (N/A if no touch)',
+  m_touch_pad:'Touchpad move, click, scroll', h_touch_pad:'Ticks itself after all five actions',
+  m_spk_lr:'Left & right speakers', h_spk_lr:'Each plays from the correct side',
+  m_spk_clean:'No rattle in the sweep', h_spk_clean:'',
+  m_mic:'Microphone input', h_mic:'Ticks itself when the bar moves as you speak',
+  m_jack:'Headphone jack', h_jack:'Only if you have wired earphones',
+  m_cam:'Webcam image OK', h_cam:'',
+  m_port_charge:'Every charging port charges', h_port_charge:'Status flips to "charging" each time you move the charger',
+  m_port_usb:'USB ports work', h_port_usb:'The port this USB stick is in works · try the others too',
+  m_port_video:'Video out (HDMI etc.)', h_port_video:'Only if you have a monitor',
+  m_wifi:'Wi-Fi connects', h_wifi:'Join a phone hotspot and open a web page',
+  m_bt:'Bluetooth', h_bt:'Settings → Bluetooth finds your phone',
+  m_cpu_ok:'No shutdown/freeze under load, fan OK', h_cpu_ok:'Fan audible, no grinding or rattling',
+  m_ext_hinge:'Hinge firm and quiet', h_ext_hinge:'Open and close at several angles',
+  m_ext_body:'No dents, bends or loose screws', h_ext_body:'Lid, base, corners, rubber feet',
+  m_ext_serial:'Box serial = device serial', h_ext_serial:'Compare the serial in the auto check with the box label',
+  m_ext_charger:'Genuine charger, right wattage', h_ext_charger:'Original brand, output (W) meets the laptop rating',
+  m_ext_account:'Seller signed out, reset agreed', h_ext_account:'No BIOS/Windows password; reset after buying'
+}};
+
+/* ---------- prefs & i18n ---------- */
+const store = {
+  get(k, d){ try { const v = localStorage.getItem('lc_' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v){ try { localStorage.setItem('lc_' + k, JSON.stringify(v)); } catch (e) {} }
+};
+let LANG = store.get('lang', ((navigator.language || '').toLowerCase().startsWith('ko') ? 'ko' : 'en'));
+let MODE = store.get('mode', 'quick');
+let SPEC = store.get('spec', {});
+function t(k, v){
+  let s = (T[LANG] && T[LANG][k] != null) ? T[LANG][k] : (T.en[k] != null ? T.en[k] : k);
+  if (v) s = s.replace(/\{(\w+)\}/g, (m, p) => v[p] != null ? v[p] : m);
+  return s;
+}
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const arr = x => Array.isArray(x) ? x : (x == null || x === '' ? [] : [x]);
+const st = s => `<span class="st ${s}">${t('st_' + s)}</span>`;
+const AUTO = window.AUTO || null;
+
+/* ---------- auto evaluation (all rules here) ---------- */
+const norm = s => String(s || '').toLowerCase().replace(/[\s\-_()]/g, '');
+const days = d => d ? Math.floor((Date.now() - new Date(d).getTime()) / 864e5) : null;
+function evaluate(){
+  if (!AUTO) return [];
+  const out = [], R = RULES;
+  const add = (cat, name, value, status, note) => out.push({cat, key: name, name: t(name), value: value == null || value === '' ? t('v_unknown') : String(value), status, note: note || ''});
+  const sys = AUTO.system || {}, cpu = AUTO.cpu || {}, ram = AUTO.ram || {};
+
+  // system
+  const modelStr = [sys.manufacturer, sys.model].filter(Boolean).join(' ') + (sys.product && !norm(sys.model).includes(norm(sys.product)) ? ` (${sys.product})` : '');
+  if (SPEC.model) {
+    const hay = norm([sys.manufacturer, sys.model, sys.family, sys.product].join(' '));
+    const hit = hay.includes(norm(SPEC.model));
+    add('c_system', 'a_model', modelStr, hit ? 'ok' : 'warn', t(hit ? 'n_spec_match' : 'n_spec_miss', {v: SPEC.model}));
+  } else add('c_system', 'a_model', modelStr, 'info', t('n_model_tip'));
+  add('c_system', 'a_serial', sys.serial, 'info', t('n_serial'));
+  add('c_system', 'a_bios', sys.bios, 'info');
+  const inst = days(sys.installDate);
+  add('c_system', 'a_os', `${sys.os || ''} (${sys.build || ''})`, 'info',
+      inst == null ? '' : (inst < R.recentInstallDays ? t('n_recent_install') : t('n_installed', {d: inst})));
+
+  // cpu & ram
+  const cpuVal = `${cpu.name || ''}${cpu.cores ? ` (${cpu.cores}C/${cpu.threads}T)` : ''}`;
+  if (SPEC.cpu) { const hit = norm(cpu.name).includes(norm(SPEC.cpu)); add('c_cpu', 'a_cpu', cpuVal, hit ? 'ok' : 'warn', t(hit ? 'n_spec_match' : 'n_spec_miss', {v: SPEC.cpu})); }
+  else add('c_cpu', 'a_cpu', cpuVal, 'info');
+  const mods = arr(ram.modules);
+  const ramVal = `${ram.totalGB} GB${ram.speed ? ` · ${ram.speed} MT/s` : ''}`;
+  if (SPEC.ram) add('c_cpu', 'a_ram', ramVal, ram.totalGB >= SPEC.ram - R.ramTolerance ? 'ok' : 'fail', t('n_ram_spec', {v: SPEC.ram}));
+  else add('c_cpu', 'a_ram', ramVal, 'info', mods.length ? t('n_ram_slots', {n: mods.length}) : '');
+
+  // storage
+  const disks = arr(AUTO.disks);
+  const biggest = disks.reduce((m, d) => Math.max(m, d.sizeGB || 0), 0);
+  disks.forEach(d => {
+    const label = `${d.name} · ${d.sizeGB} GB · ${[d.bus, d.media].filter(x => x && x !== 'Unspecified').join(' ')}`;
+    if (SPEC.storage && d.sizeGB === biggest) add('c_storage', 'a_disk', label, d.sizeGB >= SPEC.storage * R.storageTolerance ? 'ok' : 'warn', t('n_disk_spec', {v: SPEC.storage}));
+    else add('c_storage', 'a_disk', label, 'info');
+    if (d.health) add('c_storage', 'a_health', d.health, d.health === 'Healthy' ? 'ok' : 'fail', t('n_health'));
+    if (d.wear != null) add('c_storage', 'a_wear', d.wear + ' %', d.wear <= R.ssdWear.ok ? 'ok' : d.wear <= R.ssdWear.warn ? 'warn' : 'fail', t('n_wear'));
+    if (d.powerOnHours != null) add('c_storage', 'a_poh', t('v_hours', {n: Math.round(d.powerOnHours).toLocaleString()}), 'info', t('n_poh'));
+    if (d.temperature) add('c_storage', 'a_temp', d.temperature + ' °C', d.temperature <= R.ssdTempMax ? 'ok' : 'warn');
+    if (d.readErrors != null) add('c_storage', 'a_rerr', d.readErrors, d.readErrors === 0 ? 'ok' : 'fail', t('n_rerr'));
+  });
+  if (AUTO.cdrive) add('c_storage', 'a_cfree', `${AUTO.cdrive.freeGB} / ${AUTO.cdrive.sizeGB} GB`, 'info');
+
+  // battery
+  const b = AUTO.battery;
+  if (!b) add('c_battery', 'a_batt', sys.isLaptop ? t('v_nobatt') : t('v_desktop'), sys.isLaptop ? 'fail' : 'info', sys.isLaptop ? t('n_nobatt') : '');
+  else {
+    if (b.health != null) {
+      let s = b.health >= R.batteryHealth.ok ? 'ok' : b.health >= R.batteryHealth.warn ? 'warn' : 'fail';
+      let note = t('n_batt_health', {ok: R.batteryHealth.ok, warn: R.batteryHealth.warn});
+      if (SPEC.batt) {
+        if (b.health < SPEC.batt - R.batteryClaimTolerance) { if (s === 'ok') s = 'warn'; note = t('n_batt_claim', {c: SPEC.batt}); }
+        else note = t('n_batt_claim_ok', {c: SPEC.batt});
+      }
+      add('c_battery', 'a_batt_health', `${b.health}% (${Math.round(b.full).toLocaleString()} / ${Math.round(b.design).toLocaleString()} mWh)`, s, note);
+    } else add('c_battery', 'a_batt_health', null, 'warn');
+    if (b.cycles) add('c_battery', 'a_cycles', b.cycles, b.cycles <= R.batteryCycles.ok ? 'ok' : 'warn', t('n_cycles', {ok: R.batteryCycles.ok}));
+    if (b.chargePct != null) add('c_battery', 'a_charge', `${b.chargePct}% · ${t(b.onAC ? 'v_charging' : 'v_discharging')}`, 'info');
+  }
+
+  // display
+  arr(AUTO.gpus).forEach(g => {
+    add('c_display', 'a_gpu', `${g.name}${g.driver ? ' · ' + g.driver : ''}`, g.status === 'OK' ? 'ok' : 'warn');
+    if (g.width) add('c_display', 'a_res', `${g.width} × ${g.height} @ ${g.refresh} Hz${g.maxRefresh ? ` (max ${g.maxRefresh} Hz)` : ''}`, 'info', t('n_res'));
+  });
+  const inches = arr(AUTO.monitors).map(m => m.inches).filter(Boolean);
+  if (inches.length) add('c_display', 'a_panel', inches.map(i => i + '"').join(', '), 'info');
+
+  // devices
+  const dv = AUTO.devices || {};
+  const errs = arr(dv.errors);
+  if (!errs.length) add('c_devices', 'a_err_dev', t('v_none'), 'ok');
+  errs.forEach(e => add('c_devices', 'a_err_dev', e.name, e.code === 22 ? 'warn' : 'fail', e.code === 22 ? t('n_err_disabled') : t('n_err_dev', {c: e.code})));
+  if (dv.touchscreen) add('c_devices', 'a_touch', t('v_found'), 'ok');
+  else add('c_devices', 'a_touch', t('v_notfound'), SPEC.touch ? 'fail' : 'info', t(SPEC.touch ? 'n_touch_spec' : 'n_touch_none'));
+  add('c_devices', 'a_tpad', t(dv.touchpad ? 'v_found' : 'v_notfound'), dv.touchpad ? 'ok' : (sys.isLaptop ? 'warn' : 'info'));
+  const cams = arr(dv.cameras);
+  add('c_devices', 'a_cam', cams.length ? cams.join(', ') : t('v_notfound'), cams.length ? 'ok' : (sys.isLaptop ? 'warn' : 'info'));
+  const aud = arr(dv.audio);
+  add('c_devices', 'a_audio', aud.length ? aud.join(', ') : t('v_notfound'), aud.length >= 2 ? 'ok' : aud.length ? 'warn' : 'fail', t('n_audio'));
+  add('c_network', 'a_wifi', dv.wifi ? `${dv.wifi.name} · ${dv.wifi.status}` : t('v_notfound'), dv.wifi ? 'ok' : (sys.isLaptop ? 'fail' : 'info'), dv.wifi ? t('n_wifi') : '');
+  add('c_network', 'a_bt', t(dv.bluetooth ? 'v_found' : 'v_notfound'), dv.bluetooth ? 'ok' : 'warn');
+
+  // stability
+  const ev = AUTO.events || {};
+  add('c_stability', 'a_kp', t('v_times', {n: ev.kernelPower || 0}), (ev.kernelPower || 0) <= R.kernelPower.ok ? 'ok' : ev.kernelPower <= R.kernelPower.warn ? 'warn' : 'fail', t('n_kp'));
+  add('c_stability', 'a_bsod', t('v_times', {n: ev.bugcheck || 0}), (ev.bugcheck || 0) <= R.bugcheck.ok ? 'ok' : ev.bugcheck <= R.bugcheck.warn ? 'warn' : 'fail');
+  add('c_stability', 'a_whea', t('v_times', {n: ev.whea || 0}), (ev.whea || 0) === 0 ? 'ok' : 'warn', t('n_whea'));
+  if (ev.logStart) { const d = days(ev.logStart); add('c_stability', 'a_logstart', ev.logStart, 'info', d != null && d < R.shortLogDays ? t('n_short_log') : ''); }
+
+  // windows
+  const w = AUTO.windows || {};
+  if (w.activated != null) add('c_windows', 'a_act', t(w.activated ? 'v_activated' : 'v_notact'), w.activated ? 'ok' : 'warn', t('n_act'));
+  if (w.bitlocker) add('c_windows', 'a_bitlocker', t(w.bitlocker === 'On' ? 'v_on' : 'v_off'), 'info', w.bitlocker === 'On' ? t('n_bitlocker') : '');
+  add('c_windows', 'a_accounts', w.msAccounts ? t('v_ms', {n: w.msAccounts}) : t('v_local'), 'info', t('n_accounts'));
+  return out;
+}
+
+/* ---------- sections & manual items ---------- */
+const SECTIONS = ['auto','screen','keyboard','touch','audio','camera','ports','cpu','ext','summary'];
+const MANUAL = [
+  {id:'scr_dead', sec:'screen', q:1}, {id:'scr_burn', sec:'screen', q:1}, {id:'scr_bright', sec:'screen'},
+  {id:'kb_all', sec:'keyboard', q:1}, {id:'kb_light', sec:'keyboard', opt:1},
+  {id:'touch_scr', sec:'touch', q:1, opt:1}, {id:'touch_pad', sec:'touch', q:1},
+  {id:'spk_lr', sec:'audio', q:1}, {id:'spk_clean', sec:'audio'}, {id:'mic', sec:'audio'}, {id:'jack', sec:'audio', opt:1},
+  {id:'cam', sec:'camera', q:1},
+  {id:'port_charge', sec:'ports', q:1}, {id:'port_usb', sec:'ports', q:1}, {id:'port_video', sec:'ports', opt:1}, {id:'wifi', sec:'ports'}, {id:'bt', sec:'ports', opt:1},
+  {id:'cpu_ok', sec:'cpu', q:1},
+  {id:'ext_hinge', sec:'ext', q:1}, {id:'ext_body', sec:'ext', q:1}, {id:'ext_serial', sec:'ext'}, {id:'ext_charger', sec:'ext', q:1}, {id:'ext_account', sec:'ext', q:1}
+];
+const state = {};
+let activeSec = 'auto', cpuOutcome = null, autoItems = [];
+const visibleItems = () => MANUAL.filter(m => MODE === 'full' || m.q);
+const requiredItems = () => visibleItems().filter(m => !m.opt);
+
+function buildNav(){
+  $('#nav').innerHTML = SECTIONS.map(id => `<button data-sec="${id}"><span>${t('nav_' + id)}</span><span class="dot" id="dot-${id}"></span></button>`).join('');
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.sec === activeSec));
+}
+$('#nav').addEventListener('click', e => { const b = e.target.closest('button'); if (b) show(b.dataset.sec); });
+function show(id){
+  activeSec = id;
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('active', s.id === 'sec-' + id));
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.sec === id));
+  if (id === 'summary') renderSummary();
+  window.scrollTo(0, 0);
+}
+function renderItems(){
+  const secs = [...new Set(MANUAL.map(m => m.sec))];
+  secs.forEach(sec => {
+    const box = document.getElementById('items-' + sec);
+    const items = visibleItems().filter(m => m.sec === sec);
+    box.parentElement.style.display = items.length ? '' : 'none';
+    box.innerHTML = items.map(m => `<div class="item"><div class="lab">${t('m_' + m.id)}${t('h_' + m.id) ? `<small>${t('h_' + m.id)}</small>` : ''}</div>
+      <div class="pf" data-id="${m.id}">${['ok','fail','na'].map(v => `<button data-v="${v}" class="${state[m.id] === v ? 'on-' + v : ''}">${t('pf_' + v)}</button>`).join('')}</div></div>`).join('');
+  });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.pf button'); if (!b) return;
+  const id = b.parentElement.dataset.id;
+  setState(id, state[id] === b.dataset.v ? null : b.dataset.v);
+});
+function setState(id, v){
+  if (v) state[id] = v; else delete state[id];
+  const pf = document.querySelector(`.pf[data-id="${id}"]`);
+  if (pf) pf.querySelectorAll('button').forEach(b => b.className = state[id] === b.dataset.v ? 'on-' + b.dataset.v : '');
+  refresh();
+}
+function autoSet(id, v){ if (!state[id]) setState(id, v); }
+function secStatus(sec){
+  if (sec === 'auto') {
+    if (!AUTO) return '';
+    const s = autoItems.map(c => c.status);
+    return s.includes('fail') ? 'fail' : s.includes('warn') ? 'warn' : 'ok';
+  }
+  if (sec === 'summary') return '';
+  const vals = visibleItems().filter(m => m.sec === sec).map(m => state[m.id]);
+  if (sec === 'cpu' && cpuOutcome) vals.push(cpuOutcome.status);
+  if (vals.includes('fail')) return 'fail';
+  const done = vals.filter(Boolean).length;
+  if (!done) return '';
+  return done === vals.length && !vals.includes('warn') ? 'ok' : 'warn';
+}
+function refresh(){
+  SECTIONS.forEach(id => { const d = document.getElementById('dot-' + id); if (d) d.className = 'dot ' + secStatus(id); });
+  const cnt = s => autoItems.filter(c => c.status === s).length;
+  const vis = visibleItems(), done = vis.filter(m => state[m.id]).length;
+  const mf = vis.filter(m => state[m.id] === 'fail').length;
+  $('#chips').innerHTML = (AUTO ? `<span class="chip">${t('chip_auto')} <b class="ok">${cnt('ok')}</b> · <b class="warn">${cnt('warn')}</b> · <b class="fail">${cnt('fail')}</b></span>` : '')
+    + `<span class="chip">${t('chip_manual', {d: done, t: vis.length})}${mf ? ` · <b class="fail">${t('chip_fail', {n: mf})}</b>` : ''}</span>`;
+  if (activeSec === 'summary') renderSummary();
+}
+
+/* ---------- auto section ---------- */
+function renderAuto(){
+  autoItems = evaluate();
+  const box = $('#autoBox');
+  if (!AUTO) {
+    const ua = navigator.userAgent;
+    const key = /Windows/.test(ua) ? 'no_auto_win' : /Macintosh|Mac OS X/.test(ua) ? 'no_auto_mac' : 'no_auto_other';
+    box.innerHTML = `<div class="card notice">${t(key)}</div>`;
+    $('#genInfo').textContent = '';
+    return;
+  }
+  $('#genInfo').textContent = `${String(AUTO.generated || '').replace('T', ' ').slice(0, 16)} · v${AUTO.version || ''}`;
+  let html = AUTO.admin ? '' : `<div class="card notice">${t('not_admin')}</div>`;
+  const groups = {};
+  autoItems.forEach(c => (groups[c.cat] = groups[c.cat] || []).push(c));
+  Object.entries(groups).forEach(([cat, list]) => {
+    html += `<div class="card"><h3>${t(cat)}</h3><table>${list.map(c =>
+      `<tr><td class="s">${st(c.status)}</td><td class="n">${esc(c.name)}</td><td>${esc(c.value)}${c.note ? `<small>${esc(c.note)}</small>` : ''}</td></tr>`).join('')}</table></div>`;
+  });
+  box.innerHTML = html;
+  if (AUTO.devices && !AUTO.devices.touchscreen && !SPEC.touch) autoSet('touch_scr', 'na');
+}
+document.querySelectorAll('[data-spec]').forEach(el => {
+  const k = el.dataset.spec;
+  if (el.type === 'checkbox') el.checked = !!SPEC[k]; else if (SPEC[k] != null) el.value = SPEC[k];
+  el.addEventListener('input', () => {
+    if (el.type === 'checkbox') SPEC[k] = el.checked;
+    else if (el.type === 'number') SPEC[k] = el.value === '' ? null : Number(el.value);
+    else SPEC[k] = el.value.trim();
+    if (!SPEC[k]) delete SPEC[k];
+    store.set('spec', SPEC); renderAuto(); refresh();
+  });
+});
+
+/* ---------- screen ---------- */
+const SCREENS = [['#000000','sc_black'],['#ffffff','sc_white'],['#ff0000','sc_red'],['#00ff00','sc_green'],['#0000ff','sc_blue'],['#808080','sc_gray'],['#3a3a3a','sc_dark'],['linear-gradient(90deg,#000,#fff)','sc_grad']];
+let si = -1, capTimer;
+const fs = $('#fs'), cap = $('#fsCap');
+function fsStart(){ si = 0; fs.style.display = 'block'; if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); showScreen(); }
+function showScreen(){
+  if (si < 0) si = 0;
+  if (si >= SCREENS.length) { fsEnd(); return; }
+  fs.style.background = SCREENS[si][0];
+  cap.textContent = t('fs_cap', {i: si + 1, n: SCREENS.length, label: t(SCREENS[si][1])});
+  cap.style.opacity = 1; clearTimeout(capTimer); capTimer = setTimeout(() => cap.style.opacity = 0, 2500);
+}
+function fsEnd(){ si = -1; fs.style.display = 'none'; if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); }
+fs.addEventListener('click', () => { si++; showScreen(); });
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && si >= 0) fsEnd(); });
+$('#fsBtn').addEventListener('click', fsStart);
+
+/* ---------- keyboard ---------- */
+const L = s => s.split('').map(ch => [ch, 'Key' + ch]);
+const D = s => s.split('').map(ch => [ch, 'Digit' + ch]);
+const KB = [
+  [['Esc','Escape'], ...Array.from({length: 12}, (_, i) => ['F' + (i + 1), 'F' + (i + 1)]), ['Del','Delete']],
+  [['`','Backquote'], ...D('1234567890'), ['-','Minus'], ['=','Equal'], ['⌫','Backspace',2]],
+  [['Tab','Tab',1.5], ...L('QWERTYUIOP'), ['[','BracketLeft'], [']','BracketRight'], ['\\','Backslash|IntlYen',1.5]],
+  [['Caps','CapsLock',1.8], ...L('ASDFGHJKL'), [';','Semicolon'], ["'",'Quote'], ['Enter','Enter',2.2]],
+  [['Shift','ShiftLeft',2.4], ...L('ZXCVBNM'), [',','Comma'], ['.','Period'], ['/','Slash'], ['Shift','ShiftRight',2.6]],
+  [['Ctrl','ControlLeft',1.3], ['Fn',null,1], ['Win/⌘','MetaLeft|OSLeft',1.1], ['Alt','AltLeft',1.2], ['Space','Space',5],
+   ['Alt/한영','AltRight|Lang1|HangulMode',1.2], ['Ctrl/한자','ControlRight|Lang2|HanjaMode',1.2],
+   ['←','ArrowLeft'], ['↑','ArrowUp'], ['↓','ArrowDown'], ['→','ArrowRight']]
+];
+const codeMap = {}, keyEls = [], hit = new Set(), extra = new Set();
+function buildKb(){
+  const kb = $('#kb'); kb.innerHTML = ''; keyEls.length = 0;
+  KB.forEach(row => {
+    const r = document.createElement('div'); r.className = 'kr';
+    row.forEach(([label, codes, w]) => {
+      const k = document.createElement('div');
+      k.className = 'k' + (codes ? '' : ' na'); k.textContent = label; k.style.flex = (w || 1) + ' 1 0';
+      if (codes) { const idx = keyEls.length; keyEls.push(k); codes.split('|').forEach(c => codeMap[c] = idx); if (hit.has(idx)) k.classList.add('hit'); }
+      else k.title = t('kb_fn');
+      r.appendChild(k);
+    });
+    kb.appendChild(r);
+  });
+  updKb();
+}
+function updKb(){
+  $('#kbCount').textContent = t('kb_count', {n: hit.size, t: keyEls.length});
+  $('#kbExtra').textContent = extra.size ? t('kb_extra', {list: [...extra].join(', ')}) : '';
+  if (hit.size === keyEls.length) autoSet('kb_all', 'ok');
+}
+$('#kbReset').addEventListener('click', () => { hit.clear(); extra.clear(); keyEls.forEach(k => k.classList.remove('hit')); updKb(); });
+document.addEventListener('keydown', e => {
+  if (si >= 0) {
+    e.preventDefault();
+    if (e.key === 'Escape') fsEnd();
+    else if (e.key === 'ArrowLeft') { si--; showScreen(); }
+    else if ([' ', 'ArrowRight', 'Enter'].includes(e.key)) { si++; showScreen(); }
+    return;
+  }
+  if (activeSec !== 'keyboard') return;
+  if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  e.preventDefault();
+  let idx = codeMap[e.code]; if (idx === undefined) idx = codeMap[e.key];
+  $('#kbLast').textContent = t('kb_last', {k: e.code || e.key});
+  if (idx === undefined) { if (e.code) { extra.add(e.code); updKb(); } return; }
+  const k = keyEls[idx]; k.classList.add('hit', 'flash'); setTimeout(() => k.classList.remove('flash'), 150);
+  hit.add(idx); updKb();
+});
+document.addEventListener('keyup', e => { if (activeSec === 'keyboard' && !(e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) e.preventDefault(); });
+
+/* ---------- touch ---------- */
+const COLS = 12, ROWS = 7, grid = $('#grid'), tcells = new Set(), activeTouch = new Set();
+let maxTouch = 0;
+for (let i = 0; i < COLS * ROWS; i++) { const c = document.createElement('div'); c.className = 'cell'; c.dataset.i = i; grid.appendChild(c); }
+function markCell(e){
+  if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  if (el && el.classList.contains('cell') && !tcells.has(el.dataset.i)) { tcells.add(el.dataset.i); el.classList.add('t'); updTouch(); }
+}
+function updTouch(){
+  const pct = Math.round(tcells.size / (COLS * ROWS) * 100);
+  $('#touchInfo').textContent = t('touch_info', {p: pct, n: maxTouch});
+  if (pct === 100 && state.touch_scr !== 'fail') setState('touch_scr', 'ok');
+}
+grid.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') { activeTouch.add(e.pointerId); maxTouch = Math.max(maxTouch, activeTouch.size); } markCell(e); updTouch(); });
+grid.addEventListener('pointermove', markCell);
+['pointerup','pointercancel','pointerleave'].forEach(ev => grid.addEventListener(ev, e => activeTouch.delete(e.pointerId)));
+$('#gridReset').addEventListener('click', () => { tcells.clear(); maxTouch = 0; grid.querySelectorAll('.cell').forEach(c => c.classList.remove('t')); updTouch(); });
+
+const PAD = ['move','left','right','vs','hs'];
+const padDone = new Set(); let moveDist = 0;
+const pad = $('#pad');
+function renderTicks(){
+  $('#padTicks').innerHTML = PAD.map(k => `<span class="tick ${padDone.has(k) ? 'done' : ''}">${padDone.has(k) ? '✓ ' : ''}${t('pad_' + k)}</span>`).join('');
+  if (padDone.size === PAD.length && state.touch_pad !== 'fail') setState('touch_pad', 'ok');
+}
+function padHit(k){ if (!padDone.has(k)) { padDone.add(k); renderTicks(); } }
+pad.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') { moveDist += Math.abs(e.movementX) + Math.abs(e.movementY); if (moveDist > 400) padHit('move'); } });
+pad.addEventListener('mousedown', e => { if (e.button === 0) padHit('left'); if (e.button === 2) padHit('right'); });
+pad.addEventListener('contextmenu', e => { e.preventDefault(); padHit('right'); });
+pad.addEventListener('wheel', e => { e.preventDefault(); if (e.deltaY) padHit('vs'); if (e.deltaX) padHit('hs'); }, {passive: false});
+
+/* ---------- audio ---------- */
+let ac;
+function actx(){ ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); return ac; }
+function tone(pan, dur = 1.4){
+  const a = actx(), t0 = a.currentTime, o = a.createOscillator(), g = a.createGain(), p = a.createStereoPanner();
+  o.frequency.value = 523; p.pan.value = pan;
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.35, t0 + .05); g.gain.linearRampToValueAtTime(0, t0 + dur);
+  o.connect(g).connect(p).connect(a.destination); o.start(t0); o.stop(t0 + dur + .05);
+}
+document.querySelectorAll('[data-tone]').forEach(b => b.addEventListener('click', () => tone(+b.dataset.tone)));
+$('#sweepBtn').addEventListener('click', () => {
+  const a = actx(), t0 = a.currentTime, o = a.createOscillator(), g = a.createGain();
+  o.frequency.setValueAtTime(60, t0); o.frequency.exponentialRampToValueAtTime(12000, t0 + 6);
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.3, t0 + .1); g.gain.setValueAtTime(.3, t0 + 5.8); g.gain.linearRampToValueAtTime(0, t0 + 6);
+  o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + 6.05);
+});
+let micStream = null, micRaf;
+$('#micBtn').addEventListener('click', async () => {
+  if (micStream) { micStream.getTracks().forEach(x => x.stop()); micStream = null; cancelAnimationFrame(micRaf); $('#micBtn').textContent = t('btn_mic_start'); $('#micBar').style.width = '0'; return; }
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({audio: true});
+    const a = actx(), src = a.createMediaStreamSource(micStream), an = a.createAnalyser();
+    an.fftSize = 1024; src.connect(an);
+    const buf = new Float32Array(an.fftSize); let loud = 0;
+    $('#micBtn').textContent = t('btn_mic_stop'); $('#micInfo').textContent = t('mic_speak');
+    const loop = () => {
+      an.getFloatTimeDomainData(buf);
+      let s = 0; for (const v of buf) s += v * v;
+      const rms = Math.sqrt(s / buf.length);
+      $('#micBar').style.width = Math.min(100, rms * 500) + '%';
+      if (rms > .04 && ++loud > 8 && !state.mic) { autoSet('mic', 'ok'); $('#micInfo').textContent = t('mic_ok'); }
+      micRaf = requestAnimationFrame(loop);
+    };
+    loop();
+  } catch (err) { $('#micInfo').textContent = t('mic_err', {e: err.name}); }
+});
+
+/* ---------- camera ---------- */
+let camStream = null;
+$('#camBtn').addEventListener('click', async () => {
+  if (camStream) { camStream.getTracks().forEach(x => x.stop()); camStream = null; $('#cam').srcObject = null; $('#camBtn').textContent = t('btn_cam_on'); return; }
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({video: true});
+    $('#cam').srcObject = camStream; $('#camBtn').textContent = t('btn_cam_off');
+    const tr = camStream.getVideoTracks()[0], s = tr.getSettings();
+    $('#camInfo').textContent = `${tr.label} · ${s.width}×${s.height}`;
+  } catch (err) { $('#camInfo').textContent = t('cam_err', {e: err.name}); }
+});
+
+/* ---------- battery live ---------- */
+let batLive = {level: null, charging: null};
+function batKv(){
+  const b = AUTO && AUTO.battery, {level, charging} = batLive;
+  $('#batKv').innerHTML =
+    `<div><span>${t('bat_state')}</span><b style="color:${charging ? 'var(--ok)' : 'var(--text)'}">${charging == null ? '-' : t(charging ? 'charging' : 'discharging')}</b></div>
+     <div><span>${t('bat_level')}</span><b>${level == null ? '-' : level + '%'}</b></div>
+     <div><span>${t('bat_health')}</span><b>${b && b.health != null ? b.health + '%' : '-'}</b></div>
+     <div><span>${t('bat_cycles')}</span><b>${b && b.cycles ? b.cycles : '-'}</b></div>`;
+}
+if (navigator.getBattery) {
+  navigator.getBattery().then(bt => {
+    const upd = () => { batLive = {level: Math.round(bt.level * 100), charging: bt.charging}; batKv(); };
+    upd();
+    bt.addEventListener('levelchange', upd);
+    bt.addEventListener('chargingchange', () => {
+      upd();
+      $('#batLog').innerHTML = `${new Date().toLocaleTimeString()} — ${t(bt.charging ? 'bat_log_on' : 'bat_log_off')}<br>` + $('#batLog').innerHTML;
+    });
+  }).catch(() => {});
+} else $('#batLog').textContent = t('bat_unsupported');
+
+/* ---------- cpu load ---------- */
+const WORKER_SRC = `let c=0,x=1,last=performance.now();
+for(;;){for(let i=0;i<20000;i++){x=Math.sqrt(x+i)*1.0000001;}c++;
+const n=performance.now();if(n-last>=500){postMessage(x>1e300?c+1:c);c=0;last=n;}}`;
+let cpuRunning = false;
+const cpuSeconds = () => RULES.cpuSeconds[MODE] || 60;
+function cpuButtonLabel(){ if (!cpuRunning) $('#cpuBtn').textContent = cpuOutcome ? t('btn_cpu_again') : t('btn_cpu', {s: cpuSeconds()}); }
+$('#cpuBtn').addEventListener('click', () => {
+  if (cpuRunning) return;
+  cpuRunning = true; $('#cpuBtn').disabled = true; $('#cpuResult').textContent = '';
+  const n = navigator.hardwareConcurrency || 8, DUR = cpuSeconds(), BUCKET = 2;
+  const url = URL.createObjectURL(new Blob([WORKER_SRC], {type: 'text/javascript'}));
+  const buckets = new Array(DUR / BUCKET).fill(0);
+  const start = performance.now();
+  const workers = Array.from({length: n}, () => {
+    const w = new Worker(url);
+    w.onmessage = ev => { const i = Math.floor((performance.now() - start) / 1000 / BUCKET); if (i < buckets.length) buckets[i] += ev.data; };
+    return w;
+  });
+  const bars = $('#bars');
+  bars.innerHTML = buckets.map(() => '<div class="bar" style="height:2px"></div>').join('');
+  const tick = setInterval(() => {
+    const el = (performance.now() - start) / 1000;
+    $('#cpuInfo').textContent = t('cpu_running', {n, s: Math.min(DUR, Math.round(el)), d: DUR});
+    const max = Math.max(...buckets, 1);
+    [...bars.children].forEach((b, i) => b.style.height = Math.max(2, buckets[i] / max * 120) + 'px');
+    if (el >= DUR + 0.6) {
+      clearInterval(tick); workers.forEach(w => w.terminate()); URL.revokeObjectURL(url);
+      cpuRunning = false; $('#cpuBtn').disabled = false;
+      const avg = a => a.reduce((s, v) => s + v, 0) / (a.length || 1);
+      const first = avg(buckets.slice(1, 6)), last = avg(buckets.slice(-5));
+      const ratio = first ? Math.round(last / first * 100) : 0;
+      const status = ratio >= RULES.cpuRetain.ok ? 'ok' : ratio >= RULES.cpuRetain.warn ? 'warn' : 'fail';
+      cpuOutcome = {status, ratio};
+      renderCpuResult(); cpuButtonLabel(); refresh();
+    }
+  }, 500);
+});
+function renderCpuResult(){
+  if (!cpuOutcome) { $('#cpuResult').textContent = ''; return; }
+  $('#cpuResult').innerHTML = `${st(cpuOutcome.status)} ${t('cpu_result', {r: cpuOutcome.ratio})}<br><span class="mute">${t('cpu_' + cpuOutcome.status)}</span>`;
+}
+
+/* ---------- summary & export ---------- */
+function collect(){
+  const vis = visibleItems();
+  const manual = vis.map(m => ({id: m.id, label: t('m_' + m.id), status: state[m.id] || 'none', optional: !!m.opt}));
+  const missing = requiredItems().filter(m => !state[m.id]).length;
+  const fails = autoItems.filter(c => c.status === 'fail').length + manual.filter(m => m.status === 'fail').length + (cpuOutcome && cpuOutcome.status === 'fail' ? 1 : 0);
+  const warns = autoItems.filter(c => c.status === 'warn').length + (cpuOutcome && cpuOutcome.status === 'warn' ? 1 : 0);
+  return {manual, missing, fails, warns};
+}
+function verdict(r){
+  if (r.fails) return {cls: 'fail', title: t('verdict_fail', {n: r.fails}), sub: t('verdict_fail_sub')};
+  if (r.missing || r.warns || !AUTO || !cpuOutcome) {
+    const sub = [!AUTO && t('miss_auto'), r.missing && t('miss_manual', {n: r.missing}), !cpuOutcome && t('miss_cpu'), r.warns && t('n_warns', {n: r.warns})].filter(Boolean).join(' · ');
+    return {cls: 'warn', title: t('verdict_warn'), sub};
+  }
+  return {cls: 'ok', title: t('verdict_ok'), sub: t('verdict_ok_sub')};
+}
+const KEY_ITEMS = ['a_model','a_serial','a_cpu','a_ram','a_disk','a_wear','a_batt','a_batt_health','a_cycles'];
+function renderSummary(){
+  const r = collect(), v = verdict(r);
+  $('#verdict').innerHTML = `<div class="verdict ${v.cls}">${esc(v.title)}<small>${esc(v.sub)}</small></div>`;
+  const row = c => `<tr><td class="s">${st(c.status)}</td><td class="n">${esc(c.name)}</td><td>${esc(c.value)}${c.note ? `<small>${esc(c.note)}</small>` : ''}</td></tr>`;
+  let html = '';
+  if (autoItems.length) {
+    html += `<div class="card"><h3>${t('sum_key')}</h3><table>${autoItems.filter(c => KEY_ITEMS.includes(c.key)).map(row).join('')}</table></div>`;
+    const flagged = autoItems.filter(c => c.status === 'warn' || c.status === 'fail');
+    if (flagged.length) html += `<div class="card"><h3>${t('sum_flag')}</h3><table>${flagged.map(row).join('')}</table></div>`;
+  }
+  html += `<div class="card"><h3>${t('sum_manual')}</h3><table>${r.manual.map(m => `<tr><td class="s">${st(m.status)}</td><td>${esc(m.label)}</td></tr>`).join('')}
+    <tr><td class="s">${st(cpuOutcome ? cpuOutcome.status : 'none')}</td><td>${esc(t('cpu_line', {r: cpuOutcome ? cpuOutcome.ratio + '%' : '-'}))}</td></tr></table></div>`;
+  $('#sumBox').innerHTML = html;
+}
+const maskSerial = s => { s = String(s || ''); return s.length > 4 ? '*'.repeat(s.length - 4) + s.slice(-4) : s; };
+function reportText(){
+  const r = collect(), v = verdict(r);
+  const lines = [`${t('report_title')} ${new Date().toLocaleString()}`, `→ ${v.title}${v.sub ? ' · ' + v.sub : ''}`];
+  if (autoItems.length) {
+    lines.push('', '■ ' + t('nav_auto'));
+    autoItems.forEach(c => lines.push(`- [${t('st_' + c.status)}] ${c.name}: ${c.key === 'a_serial' ? maskSerial(c.value) : c.value}`));
+  }
+  lines.push('', '■ ' + t('sum_manual'));
+  r.manual.forEach(m => lines.push(`- [${t('st_' + m.status)}] ${m.label}`));
+  lines.push(`- [${t('st_' + (cpuOutcome ? cpuOutcome.status : 'none'))}] ${t('cpu_line', {r: cpuOutcome ? cpuOutcome.ratio + '%' : '-'})}`);
+  return lines.join('\n');
+}
+$('#copyBtn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(reportText()); $('#copyInfo').textContent = t('copied'); }
+  catch (e) { $('#copyInfo').textContent = t('copy_fail'); }
+});
+$('#jsonBtn').addEventListener('click', () => {
+  const r = collect();
+  const report = {tool: 'LaptopCheck', created: new Date().toISOString(), lang: LANG, mode: MODE, listing: SPEC, verdict: verdict(r).cls,
+    auto: AUTO, autoJudged: autoItems.map(({key, value, status}) => ({key, value, status})),
+    manual: r.manual.map(({id, status}) => ({id, status})), cpu: cpuOutcome};
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], {type: 'application/json'}));
+  const model = AUTO && AUTO.system ? norm(AUTO.system.model).slice(0, 24) : 'device';
+  a.download = `laptopcheck-${model || 'device'}-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+});
+
+/* ---------- language / mode ---------- */
+function applyStatic(){
+  document.documentElement.lang = LANG;
+  document.title = t('app_title') + ' · LaptopCheck';
+  document.querySelectorAll('[data-i18n]').forEach(el => el.innerHTML = t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.dataset.i18nPh));
+  document.querySelectorAll('#langSeg button').forEach(b => b.classList.toggle('on', b.dataset.lang === LANG));
+  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.mode === MODE));
+}
+function renderAll(){
+  applyStatic(); buildNav(); renderAuto(); renderItems(); buildKb(); renderTicks(); updTouch(); batKv(); renderCpuResult(); cpuButtonLabel(); refresh();
+  if (micStream) $('#micBtn').textContent = t('btn_mic_stop');
+  if (camStream) $('#camBtn').textContent = t('btn_cam_off');
+}
+$('#langSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; LANG = b.dataset.lang; store.set('lang', LANG); renderAll(); });
+$('#modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || cpuRunning) return; MODE = b.dataset.mode; store.set('mode', MODE); renderAll(); });
+
+renderAll(); show('auto');
+</script>
+</body>
+</html>
