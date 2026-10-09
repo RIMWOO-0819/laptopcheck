@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  windows-run:
+    name: Run collector on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse check.ps1 (PowerShell 5.1)
+        shell: powershell
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$PWD\src\check.ps1", [ref]$null, [ref]$errors) | Out-Null
+          if ($errors) { $errors | ForEach-Object { Write-Error $_.Message }; exit 1 }
+
+      - name: Run check.ps1 (PowerShell 5.1, as on a real laptop)
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File src\check.ps1 -NoElevate -NoOpen -OutDir out
+
+      - name: Upload collected data
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-runner-data
+          path: out/data.js
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Smoke test with the real Windows data
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install chromium
+          node tests/smoke.mjs out/data.js
+
+  smoke:
+    name: Smoke test (sample data)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
